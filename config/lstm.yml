@@ -1,0 +1,5 @@
+INPUT: './data/'
+LSTM:
+  HIDDEN_DIM: 256
+  SEQ_LEN: 500
+  BATCH_SIZE: 128
