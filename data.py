@@ -8,27 +8,40 @@ from nltk.tokenize import sent_tokenize
 
 from datasets import load_dataset
 
-nltk.download('punkt')
+nltk.download("punkt")
+
 
 def get_sentences_from_silicone():
-    datasets = ["dyda_da", "dyda_e", "iemocap", "maptask", "meld_e", "meld_s", "mrda", "oasis", "sem", "swda"]
+    datasets = [
+        "dyda_da",
+        "dyda_e",
+        "iemocap",
+        "maptask",
+        "meld_e",
+        "meld_s",
+        "mrda",
+        "oasis",
+        "sem",
+        "swda",
+    ]
     sentences = []
     for d in datasets:
         dataset = load_dataset("silicone", d)
         for split in dataset:
             for x in tqdm(dataset[split]):
-                sentence = x['Utterance']
-                if "'" in sentence or "\"" in sentence:
+                sentence = x["Utterance"]
+                if "'" in sentence or '"' in sentence:
                     sentences.append(sentence)
     return sentences
+
 
 def sentences_summary(sentences):
     n = len(sentences)
     n_lens = [len(s) for s in sentences]
-    print(f'#{n}')
-    print('Avg:', round(sum(n_lens)/n, 2))
-    print('Max:', max(n_lens))
-    print('Min:', min(n_lens))
+    print(f"#{n}")
+    print("Avg:", round(sum(n_lens) / n, 2))
+    print("Max:", max(n_lens))
+    print("Min:", min(n_lens))
 
 
 def filter_by_len(sentences, min_len=50, max_len=500):
@@ -38,12 +51,14 @@ def filter_by_len(sentences, min_len=50, max_len=500):
 
 
 def get_sentences_from_wiki():
-    dataset = load_dataset("wikipedia", date="20221120", language="simple", beam_runner='DirectRunner')
+    dataset = load_dataset(
+        "wikipedia", date="20221120", language="simple", beam_runner="DirectRunner"
+    )
     sentences = []
-    for i, x in tqdm(enumerate(dataset['train']), total=len(dataset['train'])):
-        text = x['text']
+    for i, x in tqdm(enumerate(dataset["train"]), total=len(dataset["train"])):
+        text = x["text"]
         ss = sent_tokenize(text)
-        ss = [s for s in ss if "'" in s or "\"" in s]
+        ss = [s for s in ss if "'" in s or '"' in s]
         sentences += ss
 
     return sentences
@@ -62,38 +77,14 @@ def filter_unlabeled(sentences, labels):
 def find_indices(text, c):
     return [i for i in range(len(text)) if text[i] in c]
 
+
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--min-len',
-        type=int,
-        default=50
-    )
-    parser.add_argument(
-        '--max-len',
-        type=int,
-        default=50
-    )
-    parser.add_argument(
-        '--silicone',
-        action='store_true'
-    )
-    parser.add_argument(
-        '--wiki',
-        action='store_true'
-    )
-    parser.add_argument(
-        '--output-path',
-        default='./data/'
-    )
-    parser.add_argument(
-        '--sentences-out',
-        default='./data/sentences.pkl'
-    )
-    parser.add_argument(
-        '--labels-out',
-        default='./data/labels.pkl'
-    )
+    parser.add_argument("--min-len", type=int, default=50)
+    parser.add_argument("--max-len", type=int, default=500)
+    parser.add_argument("--silicone", action="store_true")
+    parser.add_argument("--wiki", action="store_true")
+    parser.add_argument("--output-path", default="./data/")
 
     return parser.parse_args()
 
@@ -105,14 +96,21 @@ def main(args):
     if args.wiki:
         all_sentences += get_sentences_from_wiki()
 
-    all_sentences = filter_by_len(all_sentences, min_len=args.min_len, max_len=args.max_len)
+    all_sentences = filter_by_len(
+        all_sentences, min_len=args.min_len, max_len=args.max_len
+    )
     all_labels = [find_indices(s, "'\"") for s in all_sentences]
     all_sentences, all_labels = filter_unlabeled(all_sentences, all_labels)
 
-    pickle.dump(all_sentences, open(args.sentences_output_path, 'wb'))
-    pickle.dump(all_labels, open(args.sentences_output_path, 'wb'))
+    if not os.path.exists(args.output_path):
+        os.makedirs(args.output_path)
+
+    pickle.dump(
+        all_sentences, open(os.path.join(args.output_path, "sentences.pkl"), "wb")
+    )
+    pickle.dump(all_labels, open(os.path.join(args.output_path, "labels.pkl"), "wb"))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = parse_arguments()
     main(args)
