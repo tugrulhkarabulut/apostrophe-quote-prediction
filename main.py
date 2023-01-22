@@ -16,6 +16,7 @@ def parse_arguments():
         type=str,
         help='.yml config path',
     )
+    return parser.parse_args()
 
 def main(cfg):
     modules[cfg.MODEL].main(cfg)
