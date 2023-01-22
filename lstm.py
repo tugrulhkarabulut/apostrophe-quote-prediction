@@ -135,7 +135,7 @@ def main(cfg):
         train_sample_weights,
         _,
     ) = train_test_split(
-        inputs, outputs, sample_weights, test_size=0.1, stratify=outputs.max(axis=-1)
+        inputs, outputs, sample_weights, test_size=cfg.TEST_SPLIT, stratify=outputs.max(axis=-1)
     )
     test_dataset = to_tf_dataset(test_inputs, test_outputs, batch_size=cfg.LSTM.SOLVER.BATCH_SIZE)
     model = train_model(cfg, train_inputs, train_outputs, train_sample_weights, test_dataset, len(tokenizer.index_word) + 1)
