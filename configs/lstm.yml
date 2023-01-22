@@ -1,4 +1,5 @@
 INPUT: './data/'
+OUTPUT: './output/'
 LSTM:
   HIDDEN_DIM: 256
   MAX_LEN: 500
@@ -6,3 +7,4 @@ LSTM:
     BATCH_SIZE: 128
     LR: 1e-3
     PATIENCE: 5
+    EPOCHS: 10

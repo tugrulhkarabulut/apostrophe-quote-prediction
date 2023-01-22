@@ -78,6 +78,12 @@ def find_indices(text, c):
     return [i for i in range(len(text)) if text[i] in c]
 
 
+def load_data(path):
+    sentences = pickle.load(open(os.path.join(path, "sentences.pkl"), "rb"))
+    labels = pickle.load(open(os.path.join(path, "labels.pkl"), "rb"))
+    return sentences, labels
+
+
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--min-len", type=int, default=50)
@@ -95,6 +101,8 @@ def main(args):
         all_sentences += get_sentences_from_silicone()
     if args.wiki:
         all_sentences += get_sentences_from_wiki()
+
+    assert len(all_sentences) > 0
 
     all_sentences = filter_by_len(
         all_sentences, min_len=args.min_len, max_len=args.max_len

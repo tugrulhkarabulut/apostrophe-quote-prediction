@@ -4,7 +4,10 @@ import argparse
 from config import get_cfg_defaults
 
 import lstm
+import bert
+import t5
 
+modules = {'LSTM': lstm, 'BERT': bert, 'T5': t5}
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -14,12 +17,8 @@ def parse_arguments():
         help='.yml config path',
     )
 
-
 def main(cfg):
-    
-
-    if cfg.MODEL == 'LSTM':
-        lstm.main()
+    modules[cfg.MODEL].main(cfg)
 
 if __name__ == '__main__':
     args = parse_arguments()

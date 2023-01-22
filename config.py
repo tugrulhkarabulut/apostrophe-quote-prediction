@@ -2,9 +2,9 @@ from yacs.config import CfgNode as CN
 
 
 _C = CN()
-_C.INPUT = './data/'
-_C.OUTPUT = './output/'
-_C.MODEL = 'LSTM'
+_C.INPUT = "./data/"
+_C.OUTPUT = "./output/"
+_C.MODEL = "LSTM"
 _C.TEST_SPLIT = 0.1
 
 _C.LSTM = CN()
@@ -17,6 +17,7 @@ _C.LSTM.SOLVER = CN()
 _C.LSTM.SOLVER.LR = 1e-3
 _C.LSTM.SOLVER.PATIENCE = 5
 _C.LSTM.SOLVER.BATCH_SIZE = 128
+_C.LSTM.SOLVER.EPOCHS = 10
 
 
 _C.TRANSFORMER_SOLVER.LR = 3e-5
@@ -28,11 +29,11 @@ _C.TRANSFORMER_SOLVER.FP16 = True
 _C.TRANSFORMER_SOLVER.EPOCHS = 10
 
 _C.BERT = CN()
-_C.BERT.BACKBONE = 'bert-base-cased'
+_C.BERT.BACKBONE = "bert-base-cased"
 
 _C.T5 = CN()
-_C.T5.BACKBONE = 't5-small'
+_C.T5.BACKBONE = "t5-small"
 
 
 def get_cfg_defaults():
-  return _C.clone()
+    return _C.clone()
