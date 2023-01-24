@@ -294,4 +294,4 @@ def main(cfg):
         data_collator=data_collator,
         compute_metrics=get_metric_func(label2id, base_classes, tokenizer),
     )
-    trainer.train()
+    trainer.train(cfg.BERT.RESUME_FROM_CKPT)

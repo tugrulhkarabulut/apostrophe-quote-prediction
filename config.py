@@ -30,10 +30,12 @@ _C.TRANSFORMER_SOLVER.EPOCHS = 10
 
 _C.BERT = CN()
 _C.BERT.BACKBONE = "bert-base-cased"
+_C.T5.RESUME_FROM_CKPT = False
 
 _C.T5 = CN()
 _C.T5.BACKBONE = "t5-small"
 _C.T5.LOAD_DATASET_FROM_DISK = False
+_C.T5.RESUME_FROM_CKPT = False
 
 
 def get_cfg_defaults():

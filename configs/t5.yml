@@ -1,3 +1,5 @@
+INPUT: './data/'
+OUTPUT: './output/'
 T5:
   BACKBONE: t5-small
   LOAD_DATASET_FROM_DISK: False

@@ -1,5 +1,8 @@
+INPUT: './data/'
+OUTPUT: './output/'
 BERT:
   BACKBONE: 'bert-base-cased'
+  RESUME_FROM_CKPT: False
 TRANSFORMER_SOLVER:
   LR: 3e-5
   TRAIN_BATCH_SIZE: 128
