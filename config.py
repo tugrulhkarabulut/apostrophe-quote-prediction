@@ -33,6 +33,7 @@ _C.BERT.BACKBONE = "bert-base-cased"
 
 _C.T5 = CN()
 _C.T5.BACKBONE = "t5-small"
+_C.T5.LOAD_DATASET_FROM_DISK = False
 
 
 def get_cfg_defaults():

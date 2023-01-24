@@ -125,9 +125,9 @@ def prepare_dataset(tokenizer, cfg):
         seq_labels, test_size=cfg.TEST_SPLIT, stratify=[max(l) for l in labels]
     )
     df = pd.DataFrame(train_seq_labels, columns=["text", "label"])
-    df.to_json("train_data.json", orient="records", lines=True)
+    df.to_json(os.path.join(cfg.INPUT, "train_data.json"), orient="records", lines=True)
     df = pd.DataFrame(test_seq_labels, columns=["text", "label"])
-    df.to_json("test_data.json", orient="records", lines=True)
+    df.to_json(os.path.join(cfg.INPUT, "test_data.json"), orient="records", lines=True)
     dataset = load_dataset(
         "json",
         data_files={
@@ -189,21 +189,21 @@ def get_metric_func(label2id, base_classes):
             res["overall_f1"] = results["overall_f1"]
 
         return res
+    
+    return compute_metrics
 
 
 def main(cfg):
     base_classes, id2label, label2id = get_classes()
     tokenizer = AutoTokenizer.from_pretrained(cfg.BERT.BACKBONE)
     model = AutoModelForTokenClassification.from_pretrained(
-        "bert-base-cased",
+        cfg.BERT.BACKBONE,
         num_labels=len(id2label),
         id2label=id2label,
         label2id=label2id,
     )
-
     tokenized_dataset = prepare_dataset(tokenizer, cfg.INPUT)
     data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
-
     training_args = TrainingArguments(
         output_dir=cfg.OUTPUT,
         learning_rate=cfg.TRANSFORMER_SOLVER.LR,
@@ -217,7 +217,6 @@ def main(cfg):
         evaluation_strategy="epoch",
         save_strategy="epoch",
     )
-
     trainer = Trainer(
         model=model,
         args=training_args,
