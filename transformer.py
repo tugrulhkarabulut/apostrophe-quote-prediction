@@ -105,7 +105,22 @@ def align_labels_with_tokens(labels, word_ids):
     return new_labels
 
 
-def tokenize_and_align_labels(examples, tokenizer):
+def tokenize_and_align_labels_token_cls(examples, tokenizer):
+    tokenized_inputs = tokenizer(
+        examples["text"], truncation=True, is_split_into_words=True
+    )
+    all_labels = examples["label"]
+    new_labels = []
+
+    for i, labels in enumerate(all_labels):
+        word_ids = tokenized_inputs.word_ids(i)
+        new_labels.append(align_labels_with_tokens(labels, word_ids))
+
+    tokenized_inputs["labels"] = new_labels
+    return tokenized_inputs
+
+
+def tokenize_and_align_labels_seq2seq(examples, tokenizer):
     tokenized_inputs = tokenizer.batch_encode_plus(
         examples["text"],
         pad_to_max_length=True,
@@ -136,7 +151,7 @@ def tokenize_and_align_labels(examples, tokenizer):
     return tokenized_inputs
 
 
-def prepare_dataset(tokenizer, cfg):
+def prepare_dataset(tokenizer, preprocess_func, cfg):
     sentences, labels = load_data(cfg.INPUT)
     seq_labels = [label_seq(s, l) for s, l in zip(sentences, labels)]
     labels = [l for _, l in seq_labels]
@@ -155,7 +170,7 @@ def prepare_dataset(tokenizer, cfg):
         },
     )
     tokenized_dataset = dataset.map(
-        lambda x: tokenize_and_align_labels(x, tokenizer),
+        lambda x: preprocess_func(x, tokenizer),
         batched=True,
         load_from_cache_file=False,
     )
@@ -306,6 +321,7 @@ def main(cfg):
             label2id=label2id,
         )
         compute_metrics = get_metric_func_token_cls(label2id, base_classes)
+        preprocess_func = tokenize_and_align_labels_token_cls
     else:
         tokenizer = T5TokenizerFast.from_pretrained(cfg.T5.BACKBONE)
         data_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer)
@@ -315,7 +331,8 @@ def main(cfg):
             id2label=id2label,
             label2id=label2id,
         )
-        compute_metrics = get_metric_func_seq2seq(label2id, base_classes, tokenizer),
+        compute_metrics = get_metric_func_seq2seq(label2id, base_classes, tokenizer)
+        preprocess_func = tokenize_and_align_labels_seq2seq
 
 
     if cfg.DATA.LOAD_DATASET_FROM_DISK and os.path.exists(
@@ -325,9 +342,7 @@ def main(cfg):
             os.path.exists(os.path.join(cfg.INPUT, cfg.DATA.DATASET_NAME))
         )
     else:
-        tokenized_dataset = prepare_dataset(tokenizer, cfg)
-        tokenized_dataset.save_to_disk(os.path.join(cfg.INPUT, cfg.DATA.DATASET_NAME))
-
+        tokenized_dataset = prepare_dataset(tokenizer, preprocess_func, cfg)
 
     training_args = TrainingArguments(
         output_dir=cfg.OUTPUT,
