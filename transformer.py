@@ -315,7 +315,7 @@ def main(cfg):
             id2label=id2label,
             label2id=label2id,
         )
-        compute_metrics = get_metric_func_seq2seq(label2id, base_classes, tokenizer),
+        compute_metrics = get_metric_func_seq2seq(label2id, base_classes),
 
 
     if cfg.DATA.LOAD_DATASET_FROM_DISK and os.path.exists(
