@@ -136,6 +136,7 @@ def tokenize_and_align_labels(examples, tokenizer):
 def prepare_dataset(tokenizer, cfg):
     sentences, labels = load_data(cfg.INPUT)
     seq_labels = [label_seq(s, l) for s, l in zip(sentences, labels)]
+    labels = [l for _, l in seq_labels]
     train_seq_labels, test_seq_labels = train_test_split(
         seq_labels, test_size=cfg.TEST_SPLIT, stratify=[max(l) for l in labels]
     )
