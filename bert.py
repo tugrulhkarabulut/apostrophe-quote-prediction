@@ -136,7 +136,9 @@ def prepare_dataset(tokenizer, cfg):
         },
     )
     tokenized_dataset = dataset.map(
-        lambda x: tokenize_and_align_labels(x, tokenizer), batched=True, load_from_cache_file=False
+        lambda x: tokenize_and_align_labels(x, tokenizer),
+        batched=True,
+        load_from_cache_file=False,
     )
     tokenized_dataset = tokenized_dataset.remove_columns(["label", "text"])
     return tokenized_dataset
@@ -182,14 +184,14 @@ def get_metric_func(label2id, base_classes):
         res = {}
 
         for c in base_classes[1:]:
-            pre = 'AP' if c < 7 else 'QU'
+            pre = "AP" if c < 7 else "QU"
             label_type = f"{pre}-{c}"
-            res[f"{label_type}_f1"] = results[label_type]['f1']
-            res[f"{label_type}_number"] = results[label_type]['number']
+            res[f"{label_type}_f1"] = results[label_type]["f1"]
+            res[f"{label_type}_number"] = results[label_type]["number"]
             res["overall_f1"] = results["overall_f1"]
 
         return res
-    
+
     return compute_metrics
 
 
@@ -202,14 +204,14 @@ def main(cfg):
         id2label=id2label,
         label2id=label2id,
     )
-    tokenized_dataset = prepare_dataset(tokenizer, cfg.INPUT)
+    tokenized_dataset = prepare_dataset(tokenizer, cfg)
     data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
     training_args = TrainingArguments(
         output_dir=cfg.OUTPUT,
         learning_rate=cfg.TRANSFORMER_SOLVER.LR,
         per_device_train_batch_size=cfg.TRANSFORMER_SOLVER.TRAIN_BATCH_SIZE,
         per_device_eval_batch_size=cfg.TRANSFORMER_SOLVER.TRAIN_BATCH_SIZE,
-        gradient_accumulation_steps=cfg.GRAD_ACC_STEPS, 
+        gradient_accumulation_steps=cfg.GRAD_ACC_STEPS,
         gradient_checkpointing=cfg.GRAD_CKPT,
         num_train_epochs=cfg.EPOCHS,
         weight_decay=cfg.WEIGHT_DECAY,

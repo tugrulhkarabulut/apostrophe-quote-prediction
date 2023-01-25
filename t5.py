@@ -150,8 +150,12 @@ def prepare_dataset(tokenizer, cfg):
             "test": os.path.join(cfg.INPUT, "test_data.json"),
         },
     )
-    tokenized_dataset = dataset.map(lambda x: tokenize_and_align_labels(x, tokenizer), batched=True, load_from_cache_file=False)
-    tokenized_dataset = tokenized_dataset.remove_columns(['label', 'text'])
+    tokenized_dataset = dataset.map(
+        lambda x: tokenize_and_align_labels(x, tokenizer),
+        batched=True,
+        load_from_cache_file=False,
+    )
+    tokenized_dataset = tokenized_dataset.remove_columns(["label", "text"])
     tokenized_dataset.save_to_disk(os.path.join(cfg.INPUT, "tokenized_dataset_t5"))
     return tokenized_dataset
 
@@ -270,7 +274,8 @@ def main(cfg):
             os.path.exists(os.path.join(cfg.INPUT, "tokenized_dataset_t5"))
         )
     else:
-        tokenized_dataset = prepare_dataset(tokenizer, cfg.INPUT)
+        tokenized_dataset = prepare_dataset(tokenizer, cfg)
+        tokenized_dataset.save_to_disk(os.path.join(cfg.INPUT, "tokenized_dataset_t5"))
     data_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer)
     training_args = TrainingArguments(
         output_dir=cfg.OUTPUT,
