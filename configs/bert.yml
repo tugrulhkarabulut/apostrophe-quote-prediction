@@ -1,5 +1,6 @@
-INPUT: './data/'
-OUTPUT: './output/'
+INPUT: ./data/
+OUTPUT: ./output/
+MODEL: BERT
 BERT:
   BACKBONE: 'bert-base-cased'
   RESUME_FROM_CKPT: False

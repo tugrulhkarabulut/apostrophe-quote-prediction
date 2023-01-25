@@ -1,5 +1,6 @@
-INPUT: './data/'
-OUTPUT: './output/'
+INPUT: ./data/
+OUTPUT: ./output/
+MODEL: LSTM
 LSTM:
   HIDDEN_DIM: 256
   MAX_LEN: 500
