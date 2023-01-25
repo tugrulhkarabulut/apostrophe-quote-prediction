@@ -29,4 +29,5 @@ if __name__ == '__main__':
     if os.path.exists(args.config):
         cfg.merge_from_file(args.config)
 
+    print(cfg)
     main(cfg)
