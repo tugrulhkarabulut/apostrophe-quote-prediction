@@ -305,7 +305,7 @@ def main(cfg):
             id2label=id2label,
             label2id=label2id,
         )
-        compute_metrics = get_metric_func_token_cls(label2id, base_classes, tokenizer)
+        compute_metrics = get_metric_func_token_cls(label2id, base_classes)
     else:
         tokenizer = T5TokenizerFast.from_pretrained(cfg.T5.BACKBONE)
         data_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer)
@@ -315,7 +315,7 @@ def main(cfg):
             id2label=id2label,
             label2id=label2id,
         )
-        compute_metrics = get_metric_func_seq2seq(label2id, base_classes),
+        compute_metrics = get_metric_func_seq2seq(label2id, base_classes, tokenizer),
 
 
     if cfg.DATA.LOAD_DATASET_FROM_DISK and os.path.exists(
