@@ -6,8 +6,9 @@ from config import get_cfg_defaults
 import lstm
 import bert
 import t5
+import transformer
 
-modules = {'LSTM': lstm, 'BERT': bert, 'T5': t5}
+modules = {'LSTM': lstm, 'BERT': transformer, 'T5': transformer}
 
 def parse_arguments():
     parser = argparse.ArgumentParser()

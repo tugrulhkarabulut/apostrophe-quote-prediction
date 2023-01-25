@@ -5,15 +5,17 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 import nltk
 
-from datasets import load_dataset
+from datasets import load_dataset, load_from_disk
 import torch
 from transformers import (
     AutoTokenizer,
-    AutoConfig,
     AutoModelForTokenClassification,
+    T5TokenizerFast,
+    T5ForConditionalGeneration,
     TrainingArguments,
     Trainer,
-    DataCollatorForTokenClassification,
+    DataCollatorForSeq2Seq,
+    DataCollatorForTokenClassification
 )
 import evaluate
 
@@ -104,17 +106,33 @@ def align_labels_with_tokens(labels, word_ids):
 
 
 def tokenize_and_align_labels(examples, tokenizer):
-    tokenized_inputs = tokenizer(
-        examples["text"], truncation=True, is_split_into_words=True
+    tokenized_inputs = tokenizer.batch_encode_plus(
+        examples["text"],
+        pad_to_max_length=True,
+        max_length=512,
+        is_split_into_words=True,
+        return_tensors="pt",
     )
-    all_labels = examples["label"]
-    new_labels = []
 
-    for i, labels in enumerate(all_labels):
+    labels = []
+    for i, l in enumerate(examples["label"]):
         word_ids = tokenized_inputs.word_ids(i)
-        new_labels.append(align_labels_with_tokens(labels, word_ids))
+        new_l = align_labels_with_tokens(l, word_ids)
+        labels.append([str(w) for w in new_l])
 
-    tokenized_inputs["labels"] = new_labels
+    tokenized_labels = tokenizer.batch_encode_plus(
+        labels,
+        pad_to_max_length=True,
+        max_length=512,
+        is_split_into_words=True,
+        return_tensors="pt",
+    )
+    tokenized_inputs["decoder_attention_mask"] = tokenized_labels["attention_mask"]
+    tokenized_inputs["decoder_input_ids"] = tokenized_labels["input_ids"]
+    labels = tokenized_labels["input_ids"].clone().detach()
+    labels[labels[:, :] == tokenizer.pad_token_id] = -100
+    tokenized_inputs["labels"] = labels
+
     return tokenized_inputs
 
 
@@ -142,6 +160,7 @@ def prepare_dataset(tokenizer, cfg):
         load_from_cache_file=False,
     )
     tokenized_dataset = tokenized_dataset.remove_columns(["label", "text"])
+    tokenized_dataset.save_to_disk(os.path.join(cfg.INPUT, "tokenized_dataset_t5"))
     return tokenized_dataset
 
 
@@ -163,7 +182,85 @@ def get_classes():
     return base_classes, id2label, label2id
 
 
-def get_metric_func(label2id, base_classes):
+def to_int_safe(s):
+    try:
+        return int(s)
+    except:
+        return 0
+
+
+def preprocess_logits_for_metrics(logits, labels):
+    pred_ids = torch.argmax(logits[0], dim=-1)
+    return pred_ids, labels
+
+
+def get_metric_func_seq2seq(label2id, base_classes, tokenizer):
+    seqeval = evaluate.load("seqeval")
+    label_list = list(label2id.keys())
+
+    def compute_metrics(p):
+        predictions, labels = p
+        predictions = predictions[0]
+
+        true_predictions = [
+            [p for (p, l) in zip(prediction, label) if l != -100]
+            for prediction, label in zip(predictions, labels)
+        ]
+        true_labels = [
+            [l for (p, l) in zip(prediction, label) if l != -100]
+            for prediction, label in zip(predictions, labels)
+        ]
+
+        decoded_preds = tokenizer.batch_decode(
+            true_predictions, skip_special_tokens=True
+        )
+        decoded_labels = tokenizer.batch_decode(true_labels, skip_special_tokens=True)
+
+        decoded_preds = [
+            [
+                label_list[to_int_safe(t)]
+                if 0 <= to_int_safe(t) < len(label_list)
+                else "O"
+                for t in seq.split()
+            ]
+            for seq in decoded_preds
+        ]
+        decoded_labels = [
+            [
+                label_list[to_int_safe(t)]
+                if 0 <= to_int_safe(t) < len(label_list)
+                else "O"
+                for t in seq.split()
+            ]
+            for seq in decoded_labels
+        ]
+        decoded_preds = [
+            [t for t in decoded_preds[i]]
+            + ["O"] * (len(decoded_labels[i]) - len(decoded_preds[i]))
+            for i in range(len(decoded_preds))
+        ]
+
+        results = seqeval.compute(predictions=decoded_preds, references=decoded_labels)
+
+        res = {}
+
+        for c in base_classes[1:]:
+            pre = "AP" if c < 7 else "QU"
+            label_type = f"{pre}-{c}"
+            try:
+                res[f"{label_type}_f1"] = results[label_type]["f1"]
+                res[f"{label_type}_number"] = results[label_type]["number"]
+            except:
+                print(f"{label_type} does not exist.")
+
+        res["overall_f1"] = results["overall_f1"]
+
+        return res
+
+    return compute_metrics
+
+
+def get_metric_func_token_cls(label2id, base_classes):
     seqeval = evaluate.load("seqeval")
     label_list = list(label2id.keys())
 
@@ -197,18 +294,41 @@ def get_metric_func(label2id, base_classes):
 
     return compute_metrics
 
-
 def main(cfg):
     base_classes, id2label, label2id = get_classes()
-    tokenizer = AutoTokenizer.from_pretrained(cfg.BERT.BACKBONE)
-    model = AutoModelForTokenClassification.from_pretrained(
-        cfg.BERT.BACKBONE,
-        num_labels=len(id2label),
-        id2label=id2label,
-        label2id=label2id,
-    )
-    tokenized_dataset = prepare_dataset(tokenizer, cfg)
-    data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
+    if cfg.MODEL == 'BERT':
+        tokenizer = AutoTokenizer.from_pretrained(cfg.BERT.BACKBONE)
+        data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
+        model = AutoModelForTokenClassification.from_pretrained(
+            cfg.BERT.BACKBONE,
+            num_labels=len(id2label),
+            id2label=id2label,
+            label2id=label2id,
+        )
+        compute_metrics = get_metric_func_token_cls(label2id, base_classes, tokenizer)
+    else:
+        tokenizer = T5TokenizerFast.from_pretrained(cfg.T5.BACKBONE)
+        data_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer)
+        model = T5ForConditionalGeneration.from_pretrained(
+            cfg.T5.BACKBONE,
+            num_labels=len(id2label),
+            id2label=id2label,
+            label2id=label2id,
+        )
+        compute_metrics = get_metric_func_seq2seq(label2id, base_classes, tokenizer),
+
+
+    if cfg.DATA.LOAD_DATASET_FROM_DISK and os.path.exists(
+        os.path.join(cfg.INPUT, cfg.DATA.DATASET_NAME)
+    ):
+        tokenized_dataset = load_from_disk(
+            os.path.exists(os.path.join(cfg.INPUT, cfg.DATA.DATASET_NAME))
+        )
+    else:
+        tokenized_dataset = prepare_dataset(tokenizer, cfg)
+        tokenized_dataset.save_to_disk(os.path.join(cfg.INPUT, cfg.DATA.DATASET_NAME))
+
+
     training_args = TrainingArguments(
         output_dir=cfg.OUTPUT,
         learning_rate=cfg.TRANSFORMER_SOLVER.LR,
@@ -229,6 +349,6 @@ def main(cfg):
         eval_dataset=tokenized_dataset["test"],
         tokenizer=tokenizer,
         data_collator=data_collator,
-        compute_metrics=get_metric_func(label2id, base_classes),
+        compute_metrics=compute_metrics,
     )
     trainer.train(cfg.BERT.RESUME_FROM_CKPT)
