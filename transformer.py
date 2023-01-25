@@ -335,6 +335,8 @@ def main(cfg):
         preprocess_func = tokenize_and_align_labels_seq2seq
 
 
+    model_cfg = getattr(cfg, cfg.MODEL)
+
     if cfg.DATA.LOAD_DATASET_FROM_DISK and os.path.exists(
         os.path.join(cfg.INPUT, cfg.DATA.DATASET_NAME)
     ):
@@ -366,4 +368,10 @@ def main(cfg):
         data_collator=data_collator,
         compute_metrics=compute_metrics,
     )
-    trainer.train(cfg.BERT.RESUME_FROM_CKPT)
+    
+    if model_cfg.RESUME_FROM_CKPT:
+        ckpt_path = model_cfg.CKPT_PATH
+    else:
+        ckpt_path = False
+    
+    trainer.train(ckpt_path)

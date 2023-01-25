@@ -36,11 +36,14 @@ _C.BERT = CN()
 _C.BERT.BACKBONE = "bert-base-cased"
 _C.BERT.LOAD_DATASET_FROM_DISK = False
 _C.BERT.RESUME_FROM_CKPT = False
+_C.BERT.CKPT_PATH = ''
 
 _C.T5 = CN()
 _C.T5.BACKBONE = "t5-small"
 _C.T5.LOAD_DATASET_FROM_DISK = False
 _C.T5.RESUME_FROM_CKPT = False
+_C.T5.CKPT_PATH = ''
+
 
 
 def get_cfg_defaults():
