@@ -4,8 +4,6 @@ import argparse
 from config import get_cfg_defaults
 
 import lstm
-import bert
-import t5
 import transformer
 
 modules = {'LSTM': lstm, 'BERT': transformer, 'T5': transformer}
