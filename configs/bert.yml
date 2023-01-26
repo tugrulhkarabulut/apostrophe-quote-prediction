@@ -1,0 +1,19 @@
+INPUT: ./data/
+OUTPUT: ./output/
+MODEL: BERT
+DATA:
+  LOAD_DATASET_FROM_DISK: False
+  DATASET_NAME: tokenized_dataset_bert
+BERT:
+  BACKBONE: 'bert-base-cased'
+  RESUME_FROM_CKPT: False
+  CKPT_PATH: 
+TRANSFORMER_SOLVER:
+  LR: 3e-5
+  TRAIN_BATCH_SIZE: 128
+  TEST_BATCH_SIZE: 128
+  GRAD_ACC_STEPS: 2
+  GRAD_CKPT: True
+  FP16: True
+  EPOCHS: 10
+  WEIGHT_DECAY: 1e-2
