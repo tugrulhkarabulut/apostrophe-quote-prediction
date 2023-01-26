@@ -350,7 +350,7 @@ def main(cfg):
         output_dir=cfg.OUTPUT,
         learning_rate=cfg.TRANSFORMER_SOLVER.LR,
         per_device_train_batch_size=cfg.TRANSFORMER_SOLVER.TRAIN_BATCH_SIZE,
-        per_device_eval_batch_size=cfg.TRANSFORMER_SOLVER.TRAIN_BATCH_SIZE,
+        per_device_eval_batch_size=cfg.TRANSFORMER_SOLVER.TEST_BATCH_SIZE,
         gradient_accumulation_steps=cfg.TRANSFORMER_SOLVER.GRAD_ACC_STEPS,
         gradient_checkpointing=cfg.TRANSFORMER_SOLVER.GRAD_CKPT,
         num_train_epochs=cfg.TRANSFORMER_SOLVER.EPOCHS,
