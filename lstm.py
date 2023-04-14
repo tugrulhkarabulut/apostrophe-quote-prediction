@@ -65,18 +65,30 @@ def to_tf_dataset(inputs, outputs, batch_size):
     return dataset
 
 
-def train_model(cfg, train_inputs, train_outputs, train_sample_weights, test_dataset, n_chars):
+def train_model(
+    cfg, train_inputs, train_outputs, train_sample_weights, test_dataset, n_chars
+):
     model = tf.keras.Sequential(
         [
             tf.keras.layers.Input(shape=(cfg.LSTM.MAX_LEN,)),
-            tf.keras.layers.Embedding(n_chars, cfg.LSTM.HIDDEN_DIM, name="char_emb", input_length=cfg.LSTM.MAX_LEN),
+            tf.keras.layers.Embedding(
+                n_chars,
+                cfg.LSTM.HIDDEN_DIM,
+                name="char_emb",
+                input_length=cfg.LSTM.MAX_LEN,
+            ),
             tf.keras.layers.Bidirectional(
                 tf.keras.layers.LSTM(
-                    cfg.LSTM.HIDDEN_DIM, name="encoder", input_shape=(n_chars, cfg.LSTM.HIDDEN_DIM), return_sequences=True
+                    cfg.LSTM.HIDDEN_DIM,
+                    name="encoder",
+                    input_shape=(n_chars, cfg.LSTM.HIDDEN_DIM),
+                    return_sequences=True,
                 )
             ),
             tf.keras.layers.Bidirectional(
-                tf.keras.layers.LSTM(cfg.LSTM.HIDDEN_DIM, return_sequences=True, name="decoder")
+                tf.keras.layers.LSTM(
+                    cfg.LSTM.HIDDEN_DIM, return_sequences=True, name="decoder"
+                )
             ),
             tf.keras.layers.TimeDistributed(
                 tf.keras.layers.Dense(3, activation="softmax", name="predictor")
@@ -110,6 +122,7 @@ def train_model(cfg, train_inputs, train_outputs, train_sample_weights, test_dat
     )
     return model
 
+
 def evaluate_model(model, test_dataset):
     y_pred = model.predict(test_dataset)
     y_pred = y_pred.argmax(-1)
@@ -126,7 +139,9 @@ def main(cfg):
     sentences, labels = load_data(cfg.INPUT)
     tokenizer = build_tokenizer(sentences)
     sequences = tokenizer.texts_to_sequences(sentences)
-    inputs, outputs, sample_weights = create_tensors(sequences, labels, tokenizer, cfg.LSTM.MAX_LEN)
+    inputs, outputs, sample_weights = create_tensors(
+        sequences, labels, tokenizer, cfg.LSTM.MAX_LEN
+    )
     (
         train_inputs,
         test_inputs,
@@ -135,8 +150,21 @@ def main(cfg):
         train_sample_weights,
         _,
     ) = train_test_split(
-        inputs, outputs, sample_weights, test_size=cfg.TEST_SPLIT, stratify=outputs.max(axis=-1)
+        inputs,
+        outputs,
+        sample_weights,
+        test_size=cfg.TEST_SPLIT,
+        stratify=outputs.max(axis=-1),
     )
-    test_dataset = to_tf_dataset(test_inputs, test_outputs, batch_size=cfg.LSTM.SOLVER.BATCH_SIZE)
-    model = train_model(cfg, train_inputs, train_outputs, train_sample_weights, test_dataset, len(tokenizer.index_word) + 1)
+    test_dataset = to_tf_dataset(
+        test_inputs, test_outputs, batch_size=cfg.LSTM.SOLVER.BATCH_SIZE
+    )
+    model = train_model(
+        cfg,
+        train_inputs,
+        train_outputs,
+        train_sample_weights,
+        test_dataset,
+        len(tokenizer.index_word) + 1,
+    )
     evaluate_model(model, test_dataset)

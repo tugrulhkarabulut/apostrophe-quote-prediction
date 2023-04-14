@@ -15,7 +15,7 @@ from transformers import (
     TrainingArguments,
     Trainer,
     DataCollatorForSeq2Seq,
-    DataCollatorForTokenClassification
+    DataCollatorForTokenClassification,
 )
 import evaluate
 
@@ -309,9 +309,10 @@ def get_metric_func_token_cls(label2id, base_classes):
 
     return compute_metrics
 
+
 def main(cfg):
     base_classes, id2label, label2id = get_classes()
-    if cfg.MODEL == 'BERT':
+    if cfg.MODEL == "BERT":
         tokenizer = AutoTokenizer.from_pretrained(cfg.BERT.BACKBONE)
         data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
         model = AutoModelForTokenClassification.from_pretrained(
@@ -333,7 +334,6 @@ def main(cfg):
         )
         compute_metrics = get_metric_func_seq2seq(label2id, base_classes, tokenizer)
         preprocess_func = tokenize_and_align_labels_seq2seq
-
 
     model_cfg = getattr(cfg, cfg.MODEL)
 
@@ -368,10 +368,10 @@ def main(cfg):
         data_collator=data_collator,
         compute_metrics=compute_metrics,
     )
-    
+
     if model_cfg.RESUME_FROM_CKPT:
         ckpt_path = model_cfg.CKPT_PATH
     else:
         ckpt_path = False
-    
+
     trainer.train(ckpt_path)

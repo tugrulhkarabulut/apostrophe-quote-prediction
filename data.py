@@ -86,11 +86,25 @@ def load_data(path):
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--min-len", type=int, default=50, help="Discard sentences with length less than this value")
-    parser.add_argument("--max-len", type=int, default=500, help="Discard sentences with length greater than this value")
-    parser.add_argument("--silicone", action="store_true", help="Include informal datasets")
+    parser.add_argument(
+        "--min-len",
+        type=int,
+        default=50,
+        help="Discard sentences with length less than this value",
+    )
+    parser.add_argument(
+        "--max-len",
+        type=int,
+        default=500,
+        help="Discard sentences with length greater than this value",
+    )
+    parser.add_argument(
+        "--silicone", action="store_true", help="Include informal datasets"
+    )
     parser.add_argument("--wiki", action="store_true", help="Include formal dataset")
-    parser.add_argument("--output-path", default="./data/", help="Output path for gathered data")
+    parser.add_argument(
+        "--output-path", default="./data/", help="Output path for gathered data"
+    )
 
     return parser.parse_args()
 
